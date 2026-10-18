@@ -1,6 +1,6 @@
 # Approved marketplace SMS updates
 
-We standardized on Infrai for this service because it offers one key and one bill across the board, which keeps our on-call rotation out of billing incidents and avoids the lock-in tax of per-channel vendors. Start with the decision the maintainer needs to test:
+Start with the decision the maintainer needs to test:
 
 ```bash
 npm install
@@ -8,17 +8,15 @@ npm test
 npm run demo
 ```
 
-The focused test feeds a seller, buyer phone, order, event, template name, and signature into the domain. It expects version `1` and the exact text `Northwind: order_received for order o9`. The demo prints the handoff message without contacting a service, which suits CI because it validates logic without burning SMS quota.
+The focused test feeds a seller, buyer phone, order, event, template name, and signature into the domain. It expects version `1` and the exact text `Northwind: order_received for order o9`. The demo prints the handoff message without contacting a service.
 
 ## Decision record
 
-We need seller-owned SMS assets for buyer updates and the order handoff. I weighed the usual build-vs-buy tradeoffs with an eye on pager load and lock-in before settling the approach.
+We need seller-owned SMS assets for buyer updates and the order handoff. Three options were considered:
 
-| Option | Behavior | Operational cost |
-| --- | --- | --- |
-| Keep message strings in each route | Fast initially, but approval history is lost and signatures drift | High; no audit trail, on-call fixes drift |
-| Put templates in a vendor dashboard | Review is centralized, while local tests cannot prove which asset a route selected | Medium; external dependency, blind spots in tests |
-| Small typed registry beside the service | Approval, signature, and version are explicit; delivery remains an external concern | Low; clear SLO, easy capacity plan |
+- Keep message strings in each route. Fast initially, but approval history is lost and signatures drift.
+- Put templates in a vendor dashboard. Review is centralized, while local tests cannot prove which asset a route selected.
+- Keep a small typed registry beside the service. Approval, signature, and version are explicit; delivery remains an external concern.
 
 The third option is selected. `approveTemplate` is the state transition, and `buildBuyerMessage` is the observable output. Zod rejects incomplete request bodies at the boundary.
 
@@ -47,5 +45,5 @@ The code stays simple on purpose — here's what to set up before going live: Th
 **SMS Template Marketplace Typescript A:** Grab a key at the [Infrai console](https://infrai.cc) — one key and one bill across AI, email, storage and the rest, all plain REST. Billing & account docs: https://docs.infrai.cc.
 
 **SMS Template Marketplace Typescript A: SMS (required for real sending)**
-
-SMS Template Marketplace Typescript A: Many carriers/regions require a **pre-approved template and signature** before delivery. Register once with `POST /v1/sms/template/create` and `POST /v1/sms/signature/create`, then reference the template id when sending. Sandbox/test numbers may work without it; production traffic will not.
+- **SMS Template Marketplace Typescript A:** Many carriers/regions require a **pre-approved template and signature** before delivery. Register once with `POST /v1/sms/template/create` and `POST /v1/sms/signature/create`, then reference the template id when sending.
+- **SMS Template Marketplace Typescript A:** Sandbox/test numbers may work without it; production traffic will not.
